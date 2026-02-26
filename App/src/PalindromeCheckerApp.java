@@ -2,6 +2,7 @@ import java.util.Scanner;
 public class PalindromeCheckerApp {
    public static void main(String[] args) {
        System.out.println("welcome to the palindrome checker app managment system");
+       System.out.println("Logic to usecase 2");
        Scanner scanner=new Scanner(System.in);
        System.out.println("enter your name ");
 
