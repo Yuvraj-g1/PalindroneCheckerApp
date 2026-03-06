@@ -1,80 +1,144 @@
-import java.util.Scanner;
+import java.util.*;
 
-public class PalindromeCheckerApp {
+// --- 1. The Strategy Interface ---
+interface PalindromeStrategy {
+    boolean isPalindrome(String text);
+}
 
-    public static void main(String[] args) {
+// --- 2. Concrete Strategy: Using a Stack (LIFO) ---
+class StackStrategy implements PalindromeStrategy {
+    @Override
+    public boolean isPalindrome(String text) {
+        String clean = text.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        Stack<Character> stack = new Stack<>();
 
-        Scanner scanner = new Scanner(System.in);
-
-        System.out.println("Palindrome Checker App – Recursive Linked List Version");
-        System.out.print("Enter a string: ");
-        String input = scanner.nextLine();
-
-        // Create PalindromeChecker object
-        PalindromeChecker checker = new PalindromeChecker(input);
-
-        // Check palindrome
-        if (checker.checkPalindrome()) {
-            System.out.println("It is a Palindrome");
-        } else {
-            System.out.println("It is Not a Palindrome");
+        for (char ch : clean.toCharArray()) {
+            stack.push(ch);
         }
 
-        scanner.close();
+        for (char ch : clean.toCharArray()) {
+            if (ch != stack.pop()) return false;
+        }
+        return true;
     }
 }
 
-// --- Encapsulated PalindromeChecker class ---
-class PalindromeChecker {
+// --- 3. Concrete Strategy: Using a Deque (Double-Ended Queue) ---
+class DequeStrategy implements PalindromeStrategy {
+    @Override
+    public boolean isPalindrome(String text) {
+        String clean = text.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        Deque<Character> deque = new LinkedList<>();
 
-    // Node class for singly linked list (internal)
+        for (char ch : clean.toCharArray()) {
+            deque.addLast(ch);
+        }
+
+        while (deque.size() > 1) {
+            if (deque.removeFirst() != deque.removeLast()) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+// --- 4. Concrete Strategy: Your Recursive Linked List logic ---
+class RecursiveLinkedListStrategy implements PalindromeStrategy {
     private static class Node {
         char data;
         Node next;
-        Node(char data) { this.data = data; this.next = null; }
+        Node(char data) { this.data = data; }
     }
 
-    // Wrapper for front pointer during recursion
     private static class FrontPointer {
         Node node;
         FrontPointer(Node node) { this.node = node; }
     }
 
-    private Node head; // head of linked list
+    @Override
+    public boolean isPalindrome(String text) {
+        String clean = text.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+        if (clean.isEmpty()) return true;
 
-    // Constructor: normalize string and convert to linked list
-    public PalindromeChecker(String input) {
-        String processed = input.replaceAll("\\s+", "").toLowerCase();
-
-        Node tail = null;
-        for (char ch : processed.toCharArray()) {
+        // Build the list
+        Node head = null, tail = null;
+        for (char ch : clean.toCharArray()) {
             Node newNode = new Node(ch);
             if (head == null) {
-                head = newNode;
-                tail = newNode;
+                head = tail = newNode;
             } else {
                 tail.next = newNode;
                 tail = newNode;
             }
         }
+
+        return checkRecursive(head, new FrontPointer(head));
     }
 
-    // Public method to check palindrome
-    public boolean checkPalindrome() {
-        FrontPointer front = new FrontPointer(head);
-        return isPalindromeRecursive(head, front);
-    }
-
-    // Internal recursive method
-    private boolean isPalindromeRecursive(Node current, FrontPointer front) {
+    private boolean checkRecursive(Node current, FrontPointer front) {
         if (current == null) return true;
-
-        boolean res = isPalindromeRecursive(current.next, front);
-        if (!res) return false;
-
-        if (front.node.data != current.data) return false;
-
+        if (!checkRecursive(current.next, front)) return false;
+        if (current.data != front.node.data) return false;
         front.node = front.node.next;
         return true;
+    }
+}
+
+// --- 5. The Context Class ---
+class PalindromeChecker {
+    private PalindromeStrategy strategy;
+
+    // Dependency Injection via Setter
+    public void setStrategy(PalindromeStrategy strategy) {
+        this.strategy = strategy;
+    }
+
+    public boolean validate(String text) {
+        if (strategy == null) {
+            System.out.println("Error: No strategy selected!");
+            return false;
+        }
+        return strategy.isPalindrome(text);
+    }
+}
+
+// --- 6. Main Application ---
+public class PalindromeCheckerApp {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        PalindromeChecker checker = new PalindromeChecker();
+
+        System.out.println("=== Advanced Palindrome Checker (Strategy Pattern) ===");
+        System.out.print("Enter string: ");
+        String input = scanner.nextLine();
+
+        System.out.println("\nSelect Algorithm Strategy:");
+        System.out.println("1. Stack Strategy (LIFO)");
+        System.out.println("2. Deque Strategy (Front/Back comparison)");
+        System.out.println("3. Recursive Linked List Strategy");
+        System.out.print("Choice: ");
+
+        int choice = scanner.nextInt();
+
+        // Polymorphic assignment
+        switch (choice) {
+            case 1 -> checker.setStrategy(new StackStrategy());
+            case 2 -> checker.setStrategy(new DequeStrategy());
+            case 3 -> checker.setStrategy(new RecursiveLinkedListStrategy());
+            default -> {
+                System.out.println("Invalid choice. Defaulting to Stack.");
+                checker.setStrategy(new StackStrategy());
+            }
+        }
+
+        System.out.println("------------------------------------------------");
+        if (checker.validate(input)) {
+            System.out.println("RESULT: '" + input + "' IS a palindrome.");
+        } else {
+            System.out.println("RESULT: '" + input + "' IS NOT a palindrome.");
+        }
+
+        scanner.close();
     }
 }
