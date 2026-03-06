@@ -2,52 +2,51 @@ import java.util.Scanner;
 
 public class PalindromeCheckerApp {
 
-    // Node class for singly linked list
-    static class Node {
+    public static void main(String[] args) {
+
+        Scanner scanner = new Scanner(System.in);
+
+        System.out.println("Palindrome Checker App – Recursive Linked List Version");
+        System.out.print("Enter a string: ");
+        String input = scanner.nextLine();
+
+        // Create PalindromeChecker object
+        PalindromeChecker checker = new PalindromeChecker(input);
+
+        // Check palindrome
+        if (checker.checkPalindrome()) {
+            System.out.println("It is a Palindrome");
+        } else {
+            System.out.println("It is Not a Palindrome");
+        }
+
+        scanner.close();
+    }
+}
+
+// --- Encapsulated PalindromeChecker class ---
+class PalindromeChecker {
+
+    // Node class for singly linked list (internal)
+    private static class Node {
         char data;
         Node next;
-        Node(char data) {
-            this.data = data;
-            this.next = null;
-        }
+        Node(char data) { this.data = data; this.next = null; }
     }
 
-    // Wrapper class to hold front pointer during recursion
-    static class FrontPointer {
+    // Wrapper for front pointer during recursion
+    private static class FrontPointer {
         Node node;
         FrontPointer(Node node) { this.node = node; }
     }
 
-    // Recursive function to check palindrome using linked list
-    public static boolean isPalindromeRecursive(Node current, FrontPointer front) {
-        if (current == null) return true; // base case: end of list
+    private Node head; // head of linked list
 
-        // Recurse to the end
-        boolean res = isPalindromeRecursive(current.next, front);
-        if (!res) return false;
-
-        // Compare front node and current node
-        if (front.node.data != current.data) return false;
-
-        // Move front pointer forward
-        front.node = front.node.next;
-
-        return true;
-    }
-
-    public static void main(String[] args) {
-
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Palindrome Checker App – Recursive Linked List Version");
-
-        System.out.print("Enter a string: ");
-        String input = scanner.nextLine();
-
-        // Normalize string: remove spaces and ignore case
+    // Constructor: normalize string and convert to linked list
+    public PalindromeChecker(String input) {
         String processed = input.replaceAll("\\s+", "").toLowerCase();
 
-        // Convert string to linked list
-        Node head = null, tail = null;
+        Node tail = null;
         for (char ch : processed.toCharArray()) {
             Node newNode = new Node(ch);
             if (head == null) {
@@ -58,16 +57,24 @@ public class PalindromeCheckerApp {
                 tail = newNode;
             }
         }
+    }
 
-        // Create a front pointer for recursion
+    // Public method to check palindrome
+    public boolean checkPalindrome() {
         FrontPointer front = new FrontPointer(head);
+        return isPalindromeRecursive(head, front);
+    }
 
-        if (isPalindromeRecursive(head, front)) {
-            System.out.println("It is a Palindrome");
-        } else {
-            System.out.println("It is Not a Palindrome");
-        }
+    // Internal recursive method
+    private boolean isPalindromeRecursive(Node current, FrontPointer front) {
+        if (current == null) return true;
 
-        scanner.close();
+        boolean res = isPalindromeRecursive(current.next, front);
+        if (!res) return false;
+
+        if (front.node.data != current.data) return false;
+
+        front.node = front.node.next;
+        return true;
     }
 }
