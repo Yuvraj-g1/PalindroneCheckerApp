@@ -8,7 +8,7 @@ public class PalindromeCheckerApp {
         Stack<Character> stack = new Stack<>();
 
         System.out.println("Palindrome Checker App");
-        System.out.println("Version 4.0");
+        System.out.println("Version 5.0");
 
         System.out.print("Enter a string: ");
         String input = scanner.nextLine();
