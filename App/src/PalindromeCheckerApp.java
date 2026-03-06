@@ -3,19 +3,17 @@ import java.util.*;
 // --- 1. The Strategy Interface ---
 interface PalindromeStrategy {
     boolean isPalindrome(String text);
+    String getName(); // Added to identify the strategy in results
 }
 
-// --- 2. Concrete Strategy: Using a Stack (LIFO) ---
+// --- 2. Stack Strategy ---
 class StackStrategy implements PalindromeStrategy {
+    public String getName() { return "Stack (LIFO)"; }
     @Override
     public boolean isPalindrome(String text) {
         String clean = text.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
         Stack<Character> stack = new Stack<>();
-
-        for (char ch : clean.toCharArray()) {
-            stack.push(ch);
-        }
-
+        for (char ch : clean.toCharArray()) stack.push(ch);
         for (char ch : clean.toCharArray()) {
             if (ch != stack.pop()) return false;
         }
@@ -23,56 +21,37 @@ class StackStrategy implements PalindromeStrategy {
     }
 }
 
-// --- 3. Concrete Strategy: Using a Deque (Double-Ended Queue) ---
+// --- 3. Deque Strategy ---
 class DequeStrategy implements PalindromeStrategy {
+    public String getName() { return "Deque (Two-Way)"; }
     @Override
     public boolean isPalindrome(String text) {
         String clean = text.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
         Deque<Character> deque = new LinkedList<>();
-
-        for (char ch : clean.toCharArray()) {
-            deque.addLast(ch);
-        }
-
+        for (char ch : clean.toCharArray()) deque.addLast(ch);
         while (deque.size() > 1) {
-            if (deque.removeFirst() != deque.removeLast()) {
-                return false;
-            }
+            if (deque.removeFirst() != deque.removeLast()) return false;
         }
         return true;
     }
 }
 
-// --- 4. Concrete Strategy: Your Recursive Linked List logic ---
+// --- 4. Recursive Linked List Strategy ---
 class RecursiveLinkedListStrategy implements PalindromeStrategy {
-    private static class Node {
-        char data;
-        Node next;
-        Node(char data) { this.data = data; }
-    }
-
-    private static class FrontPointer {
-        Node node;
-        FrontPointer(Node node) { this.node = node; }
-    }
+    public String getName() { return "Recursive Linked List"; }
+    private static class Node { char data; Node next; Node(char data) { this.data = data; } }
+    private static class FrontPointer { Node node; FrontPointer(Node node) { this.node = node; } }
 
     @Override
     public boolean isPalindrome(String text) {
         String clean = text.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
         if (clean.isEmpty()) return true;
-
-        // Build the list
         Node head = null, tail = null;
         for (char ch : clean.toCharArray()) {
             Node newNode = new Node(ch);
-            if (head == null) {
-                head = tail = newNode;
-            } else {
-                tail.next = newNode;
-                tail = newNode;
-            }
+            if (head == null) head = tail = newNode;
+            else { tail.next = newNode; tail = newNode; }
         }
-
         return checkRecursive(head, new FrontPointer(head));
     }
 
@@ -85,60 +64,46 @@ class RecursiveLinkedListStrategy implements PalindromeStrategy {
     }
 }
 
-// --- 5. The Context Class ---
-class PalindromeChecker {
-    private PalindromeStrategy strategy;
-
-    // Dependency Injection via Setter
-    public void setStrategy(PalindromeStrategy strategy) {
-        this.strategy = strategy;
-    }
-
-    public boolean validate(String text) {
-        if (strategy == null) {
-            System.out.println("Error: No strategy selected!");
-            return false;
-        }
-        return strategy.isPalindrome(text);
-    }
-}
-
-// --- 6. Main Application ---
+// --- 5. Main Application with Performance Comparison (UC13) ---
 public class PalindromeCheckerApp {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        PalindromeChecker checker = new PalindromeChecker();
 
-        System.out.println("=== Advanced Palindrome Checker (Strategy Pattern) ===");
-        System.out.print("Enter string: ");
+        System.out.println("=== UC13: Palindrome Performance Comparison ===");
+        System.out.print("Enter string to test: ");
         String input = scanner.nextLine();
 
-        System.out.println("\nSelect Algorithm Strategy:");
-        System.out.println("1. Stack Strategy (LIFO)");
-        System.out.println("2. Deque Strategy (Front/Back comparison)");
-        System.out.println("3. Recursive Linked List Strategy");
-        System.out.print("Choice: ");
+        // List of strategies to compare
+        List<PalindromeStrategy> strategies = Arrays.asList(
+                new StackStrategy(),
+                new DequeStrategy(),
+                new RecursiveLinkedListStrategy()
+        );
 
-        int choice = scanner.nextInt();
+        System.out.println("\n--- Performance Results ---");
+        System.out.printf("%-25s | %-10s | %-15s\n", "Algorithm", "Result", "Time (ns)");
+        System.out.println("------------------------------------------------------------");
 
-        // Polymorphic assignment
-        switch (choice) {
-            case 1 -> checker.setStrategy(new StackStrategy());
-            case 2 -> checker.setStrategy(new DequeStrategy());
-            case 3 -> checker.setStrategy(new RecursiveLinkedListStrategy());
-            default -> {
-                System.out.println("Invalid choice. Defaulting to Stack.");
-                checker.setStrategy(new StackStrategy());
-            }
+        for (PalindromeStrategy strategy : strategies) {
+            // 1. Capture start time
+            long startTime = System.nanoTime();
+
+            // 2. Run the algorithm
+            boolean result = strategy.isPalindrome(input);
+
+            // 3. Capture end time
+            long endTime = System.nanoTime();
+
+            long duration = endTime - startTime;
+
+            System.out.printf("%-25s | %-10s | %-15d\n",
+                    strategy.getName(),
+                    (result ? "Palindrome" : "Not Pal"),
+                    duration);
         }
 
-        System.out.println("------------------------------------------------");
-        if (checker.validate(input)) {
-            System.out.println("RESULT: '" + input + "' IS a palindrome.");
-        } else {
-            System.out.println("RESULT: '" + input + "' IS NOT a palindrome.");
-        }
-
+        System.out.println("------------------------------------------------------------");
+        System.out.println("Note: 1,000,000 nanoseconds = 1 millisecond.");
         scanner.close();
     }
 }
